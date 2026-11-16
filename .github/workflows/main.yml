@@ -32,7 +32,7 @@ jobs:
 
       - name: Install Capacitor & create Android project
         run: |
-          npm install --no-save --legacy-peer-deps @capacitor/core @capacitor/cli @capacitor/android
+          npm install --no-save --legacy-peer-deps @capacitor/core@7.6.10 @capacitor/cli@7.6.10 @capacitor/android@7.6.10
           npx cap add android
           mkdir -p android/app/src/main/res/values
           cp -r android-res/mipmap-* android/app/src/main/res/
@@ -44,9 +44,13 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
-          for sm in "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager; do [ -x "$sm" ] && yes | "$sm" --licenses >/dev/null 2>&1 || true; done
+          SM=$(ls -1 "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -n 1)
+          if [ -n "$SM" ]; then
+            yes | "$SM" --licenses >/dev/null 2>&1 || true
+            yes | "$SM" "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
+          fi
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
